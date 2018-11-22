@@ -115,7 +115,7 @@ public class KauppaTest {
 
         Varasto varasto = mock(Varasto.class);
         when(varasto.saldo(1)).thenReturn(10);
-        when(varasto.saldo(3)).thenReturn(0);
+        when(varasto.saldo(3)).thenReturn(0);  // kalja loppu
         when(varasto.haeTuote(1)).thenReturn(new Tuote(1, "maito", 5));
         when(varasto.haeTuote(3)).thenReturn(new Tuote(3, "kalja", 299));
 
