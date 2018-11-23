@@ -55,7 +55,7 @@ public class KauppaTest {
         verify(pankki).tilisiirto(eq("pekka"), eq(42), eq("12345"), anyString(), eq(5));
         // toistaiseksi ei välitetty kutsussa käytetyistä parametreista
     }
-    
+
     @Test
     public void ostoksenPaaytyttyaPankinMetodiaTilisiirtoKutsutaan2() {
         Pankki pankki = mock(Pankki.class);
@@ -81,7 +81,7 @@ public class KauppaTest {
         verify(pankki).tilisiirto(eq("pekka"), eq(42), eq("12345"), anyString(), eq(5 + 7));
         // toistaiseksi ei välitetty kutsussa käytetyistä parametreista
     }
-    
+
     @Test
     public void ostoksenPaaytyttyaPankinMetodiaTilisiirtoKutsutaan3() {
         Pankki pankki = mock(Pankki.class);
@@ -105,7 +105,7 @@ public class KauppaTest {
         verify(pankki).tilisiirto(eq("pekka"), eq(42), eq("12345"), anyString(), eq(5 + 5));
         // toistaiseksi ei välitetty kutsussa käytetyistä parametreista
     }
-    
+
     @Test
     public void ostoksenPaaytyttyaPankinMetodiaTilisiirtoKutsutaan4() {
         Pankki pankki = mock(Pankki.class);
@@ -129,7 +129,59 @@ public class KauppaTest {
 
         // sitten suoritetaan varmistus, että pankin metodia tilisiirto on kutsuttu
         verify(pankki).tilisiirto(eq("pekka"), eq(42), eq("12345"), anyString(), eq(5 + 0));
-        // toistaiseksi ei välitetty kutsussa käytetyistä parametreista
+    }
+
+    @Test
+    public void aloitaAsiointiNollaaTiedot() {
+        Pankki pankki = mock(Pankki.class);
+
+        Viitegeneraattori viite = mock(Viitegeneraattori.class);
+        when(viite.uusi()).thenReturn(42);
+
+        Varasto varasto = mock(Varasto.class);
+        when(varasto.saldo(1)).thenReturn(10);
+        when(varasto.saldo(3)).thenReturn(0);  // kalja loppu
+        when(varasto.haeTuote(1)).thenReturn(new Tuote(1, "maito", 5));
+
+        Kauppa k = new Kauppa(varasto, pankki, viite);
+
+        // tehdään ostokset
+        k.aloitaAsiointi();
+        k.lisaaKoriin(1);     // ostetaan tuotetta numero 1 eli maitoa
+
+        // aloitetaan uusi asiointi
+        k.aloitaAsiointi();
+        k.lisaaKoriin(1);
+        k.tilimaksu("pekka", "12345");
+
+        // sitten suoritetaan varmistus, että pankin metodia tilisiirto on kutsuttu
+        verify(pankki).tilisiirto(eq("pekka"), eq(42), eq("12345"), anyString(), eq(5));
+    }
+
+    @Test
+    public void jokaMaksullePyydetaanOmaViite() {
+        Pankki pankki = mock(Pankki.class);
+
+        Viitegeneraattori viite = mock(Viitegeneraattori.class);
+        when(viite.uusi()).thenReturn(42).thenReturn(43);
+
+        Varasto varasto = mock(Varasto.class);
+        when(varasto.saldo(1)).thenReturn(10);
+        when(varasto.haeTuote(1)).thenReturn(new Tuote(1, "maito", 5));
+
+        Kauppa k = new Kauppa(varasto, pankki, viite);
+
+        // tehdään ostokset
+        k.aloitaAsiointi();
+        k.lisaaKoriin(1);     // ostetaan tuotetta numero 1 eli maitoa
+        k.tilimaksu("pekka", "12345");
+
+        // aloitetaan uusi asiointi
+        k.aloitaAsiointi();
+        k.lisaaKoriin(1);
+        k.tilimaksu("pekka", "12345");
+
+        verify(viite, times(2)).uusi();
     }
 
     @Test
@@ -137,7 +189,25 @@ public class KauppaTest {
     }
 
     @Test
-    public void testPoistaKorista() {
+    public void poistaKoristaPalauttaaVarastoon() {
+        Pankki pankki = mock(Pankki.class);
+
+        Viitegeneraattori viite = mock(Viitegeneraattori.class);
+        when(viite.uusi()).thenReturn(42).thenReturn(43);
+
+        Varasto varasto = mock(Varasto.class);
+        Tuote maito = new Tuote(1, "maito", 5);
+        when(varasto.saldo(1)).thenReturn(10);
+        when(varasto.haeTuote(1)).thenReturn(maito);
+
+        Kauppa k = new Kauppa(varasto, pankki, viite);
+
+        k.aloitaAsiointi();
+        k.lisaaKoriin(1);     // ostetaan tuotetta numero 1 eli maitoa
+        k.lisaaKoriin(1);
+        k.poistaKorista(1);
+
+        verify(varasto, times(1)).palautaVarastoon(maito);
     }
 
     @Test
@@ -149,7 +219,21 @@ public class KauppaTest {
     }
 
     @Test
-    public void testGetTapahtumat() {
+    public void getTapahtumatKysyyPankilta() {
+        Pankki pankki = mock(Pankki.class);
+
+        Viitegeneraattori viite = mock(Viitegeneraattori.class);
+        when(viite.uusi()).thenReturn(42).thenReturn(43);
+
+        Varasto varasto = mock(Varasto.class);
+        Tuote maito = new Tuote(1, "maito", 5);
+        when(varasto.saldo(1)).thenReturn(10);
+        when(varasto.haeTuote(1)).thenReturn(maito);
+
+        Kauppa k = new Kauppa(varasto, pankki, viite);
+        k.getTapahtumat();
+        
+        verify(pankki, times(1)).getTapahtumat();
     }
 
 }
